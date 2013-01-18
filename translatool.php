@@ -116,7 +116,8 @@ class Translatool extends Module
 								'storage file path' => "/themes/default/lang/en.php",
 								'array name' 		=> '$_LANG',
 								'array key' 		=> $key,
-								'english string' 	=> $string);
+								'english string' 	=> $string,
+								'group' 			=> $template_name);
 			}
 		}
 		
@@ -157,7 +158,8 @@ class Translatool extends Module
 											'storage file path' => "/themes/prestashop/lang/en.php",
 											'array name' 		=> '$_LANG',
 											'array key' 		=> $tkey,
-											'english string' 	=> $key);
+											'english string' 	=> $key,
+											'group' 			=> $template2);
 						}
 					}
 				}
@@ -181,7 +183,8 @@ class Translatool extends Module
 								'storage file path' => "/translations/en/admin.php",
 								'array name' 		=> '$_LANGADM',
 								'array key' 		=> $key,
-								'english string' 	=> $string);
+								'english string' 	=> $string,
+								'group' 			=> $template_name);
 			}
 		}
 		
@@ -208,7 +211,7 @@ class Translatool extends Module
 				foreach ($matches[1] AS $key)
 				{
 					$wkey = $tab.md5($key);
-					$found[$wkey] = $key;
+					$found[$wkey] = array("group" => $tab, "ekey" => $key);
 				}
 			}
 		}
@@ -224,7 +227,7 @@ class Translatool extends Module
 			foreach ($matches[1] AS $key)
 			{
 				$wkey = 'index'.md5($key);
-				$found[$wkey] = $key;
+				$found[$wkey] = array("group" => 'index', "ekey" => $key);
 			}
 		}
 		
@@ -236,7 +239,8 @@ class Translatool extends Module
 							'storage file path' => "/translations/en/admin.php",
 							'array name' 		=> '$_LANGADM',
 							'array key' 		=> $wkey,
-							'english string' 	=> $ekey);
+							'english string' 	=> $ekey['ekey'],
+							'group'				=> $ekey['group']);
 		}
 		
 		return $res;		
@@ -257,7 +261,8 @@ class Translatool extends Module
 								'storage file path' => "/translations/en/pdf.php",
 								'array name' 		=> '$_LANGPDF',
 								'array key' 		=> $key,
-								'english string' 	=> $string);
+								'english string' 	=> $string,
+								'group'				=> $stuff_name);
 			}
 		}
 		
@@ -297,7 +302,8 @@ class Translatool extends Module
 							'storage file path' => "/translations/en/pdf.php",
 							'array name' 		=> '$_LANGPDF',
 							'array key' 		=> $wkey,
-							'english string' 	=> $ekey);
+							'english string' 	=> $ekey,
+							'group'				=> 'PDF_invoice');
 		}
 		
 		return $res;
@@ -324,7 +330,8 @@ class Translatool extends Module
 										'storage file path' => "/modules/$module_name/translations/en.php",
 										'array name' 		=> '$_MODULE',
 										'array key' 		=> $key,
-										'group'				=> '',
+										'group'				=> $module_name,
+										'subgroup'			=> $template_name,
 										'english string' 	=> $string);
 					}
 				}
@@ -374,6 +381,8 @@ class Translatool extends Module
 										'group'				=> '',
 										'array name' 		=> '$_MODULE',
 										'array key' 		=> $wkey,
+										'group'				=> $module_name,
+										'subgroup'			=> $file_name,
 										'english string' 	=> $ekey);
 					}	
 				}
@@ -479,10 +488,11 @@ class Translatool extends Module
 		$all_fields = array();
 		foreach (scandir(_PS_CLASS_DIR_) AS $classFile)
 		{
-			if (!preg_match('/\.php$/', $classFile) OR $classFile == 'index.php')
+			if (!preg_match('/\.php$/', $classFile) OR $classFile == 'index.php' OR preg_match('/\.old\.php$/', $classFile))
 				continue;
-			include_once(_PS_CLASS_DIR_.$classFile);
 			$className = substr($classFile, 0, -4);
+			if (!class_exists($className))
+				include_once(_PS_CLASS_DIR_.$classFile);
 			if (!class_exists($className))
 				continue;
 			if (!is_subclass_of($className, 'ObjectModel'))
@@ -587,30 +597,36 @@ class Translatool extends Module
 				
 				if(isset($info['subject']))
 				{
-					$res[] = array( 'language' 		=> 'en',
-							'section'  		=> '7 - Mails',
-							'storage file path' => "/mails/en/lang.php",
-							'array name' 		=> '$_LANGMAIL',
-							'array key' 		=> $info['subject'],
-							'english string' 	=> $info['subject'],
-							'group'			=> $file_name);
+					$res[] = array( 'language' 			=> 'en',
+									'section'  			=> '7 - Mails',
+									'storage file path' => "/mails/en/lang.php",
+									'array name' 		=> '$_LANGMAIL',
+									'array key' 		=> $info['subject'],
+									'english string' 	=> $info['subject'],
+									'group'				=> $file_name,
+									'subgroup' 			=> 'Subject');
 				}
 				
-				$res[] = array( 'language' 			=> 'en',
-						'section'  			=> '7 - Mails',
-						'storage file path' 		=> ($sfp = $mail_root.$file_name.".html"),
-						'array name' 			=> '',
-						'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
-						'english string' 		=> $info['html']['en'],
-						'group'				=> $file_name);
+				$res[] = array( 'language' 				=> 'en',
+								'section'  				=> '7 - Mails',
+								'storage file path' 	=> ($sfp = $mail_root.$file_name.".html"),
+								'array name' 			=> '',
+								'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+								'english string' 		=> $info['html']['en'],
+								'group'					=> $file_name,
+								'subgroup'				=> 'HTML Version');
 				
-				$res[] = array( 'language' 			=> 'en',
-						'section'  			=> '7 - Mails',
-						'storage file path' 		=> ($sfp = $mail_root.$file_name.".txt"),
-						'array name' 			=> '',
-						'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
-						'english string' 		=> $info['txt']['en'],
-						'group'				=> $file_name);
+				if(isset($info['txt']))
+				{
+					$res[] = array( 'language' 				=> 'en',
+									'section'  				=> '7 - Mails',
+									'storage file path' 	=> ($sfp = $mail_root.$file_name.".txt"),
+									'array name' 			=> '',
+									'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+									'english string' 		=> $info['txt']['en'],
+									'group'					=> $file_name,
+									'subgroup'				=> 'Plain Text Version');
+				}
 				
 			}
 		}
@@ -683,31 +699,36 @@ class Translatool extends Module
 				
 				if(isset($info['subject']))
 				{
-					$res[] = array( 'language' 		=> 'en',
-							'section'  		=> '7 - Mails',
-							'storage file path' => "/mails/en/lang.php",
-							'array name' 		=> '$_LANGMAIL',
-							'array key' 		=> $info['subject'],
-							'english string' 	=> $info['subject'],
-							'group'			=> $file_name);
+					$res[] = array( 'language' 			=> 'en',
+									'section'  			=> '7 - Mails',
+									'storage file path' => "/mails/en/lang.php",
+									'array name' 		=> '$_LANGMAIL',
+									'array key' 		=> $info['subject'],
+									'english string' 	=> $info['subject'],
+									'group'				=> $file_name,
+									'subgroup'			=> 'Subject');
 				}
 				
 				$res[] = array( 'language' 			=> 'en',
-						'section'  			=> '7 - Mails',
-						'storage file path' 		=> ($sfp = $mail_root.$file_name.".html"),
-						'array name' 			=> '',
-						'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
-						'english string' 		=> $info['html']['en'],
-						'group'				=> $file_name);
+								'section'  			=> '7 - Mails',
+								'storage file path' => ($sfp = $mail_root.$file_name.".html"),
+								'array name' 		=> '',
+								'array key' 		=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+								'english string' 	=> $info['html']['en'],
+								'group'				=> $file_name,
+								'subgroup'			=> 'HTML Version');
 				
-				$res[] = array( 'language' 			=> 'en',
-						'section'  			    => '7 - Mails',
-						'storage file path' 		=> ($sfp = $mail_root.$file_name.".txt"),
-						'array name' 			=> '',
-						'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
-						'english string' 		=> $info['txt']['en'],
-						'group'				    => $file_name);
-				
+				if(isset($info['txt']))
+				{
+					$res[] = array( 'language' 				=> 'en',
+									'section'  			    => '7 - Mails',
+									'storage file path' 	=> ($sfp = $mail_root.$file_name.".txt"),
+									'array name' 			=> '',
+									'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+									'english string' 		=> $info['txt']['en'],
+									'group'				    => $file_name,
+									'subgroup'				=> 'Plain Text Version');
+				}
 			}
 		}
 		
@@ -732,7 +753,7 @@ class Translatool extends Module
 		$file = fopen($path, 'w');
 		if($file)
 		{
-			fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'Array Key', 'English String', 'Translation'), ';', '"');
+			fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
 			
 			foreach($methods as $method)
 			{
@@ -741,7 +762,7 @@ class Translatool extends Module
 				//echo "<p>OK</p>";
 				foreach($arr as $row)
 				{
-					fputcsv($file, array($row['language'], $row['section'], $row['storage file path'], $row['array name'], @$row['group'], $row['array key'], $row['english string']), ';', '"');
+					fputcsv($file, array($row['language'], $row['section'], $row['storage file path'], $row['array name'], @$row['group'], @$row['subgroup'], $row['array key'], $row['english string']), ';', '"');
 				}
 			}
 			
