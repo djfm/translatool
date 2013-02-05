@@ -195,17 +195,40 @@ class Translatool extends Module
 	{
 		$found = array();
 		$tabs = scandir(PS_ADMIN_DIR.'/tabs');
+		
+
+		$tabs_override = scandir(PS_ADMIN_DIR.'/tabs/override');
+
+		$tabs = array_merge($tabs, $tabs_override);
 		$tabs[] = '../../classes/AdminTab.php';
+		$tabs[] = '../../override/classes/AdminTab.php';
+		
 		$files = array();
 		
 		foreach ($tabs AS $tab)
 		{
-			if (preg_match('/^(.*)\.php$/', $tab) AND file_exists($tpl = PS_ADMIN_DIR.'/tabs/'.$tab))
+			$filename = $tab;
+			if (preg_match('/^(.*)\.php$/', $tab) AND (($regular = file_exists($tpl = PS_ADMIN_DIR.'/tabs/'.$filename)) OR ($override = file_exists($override_tpl = PS_ADMIN_DIR.'/tabs/override/'.$filename))))
 			{
 				$tab = basename(substr($tab, 0, -4));
-				$fd = fopen($tpl, 'r');
-				$content = fread($fd, filesize($tpl));
-				fclose($fd);
+				
+				if(isset($regular) and $regular)
+				{
+					//echo "<p>$tpl</p>";
+					$content = file_get_contents($tpl);
+				}
+				else $content = '';
+				
+				if(isset($override) and $override)
+				{
+					//echo "<p><b>$override_tpl</b></p>";
+					
+					$override_content = file_get_contents($override_tpl);
+					
+					//echo "<pre>".htmlentities($override_content)."</pre>";
+					$content .= "\n" . $override_content;
+				}
+				
 				$regex = '/this->l\(\''._PS_TRANS_PATTERN_.'\'[\)|\,]/U';
 				preg_match_all($regex, $content, $matches);
 				foreach ($matches[1] AS $key)
