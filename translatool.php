@@ -196,8 +196,15 @@ class Translatool extends Module
 		$found = array();
 		$tabs = scandir(PS_ADMIN_DIR.'/tabs');
 		
-
-		$tabs_override = scandir(PS_ADMIN_DIR.'/tabs/override');
+		if(is_dir(PS_ADMIN_DIR.'/tabs/override'))
+		{
+			$tabs_override = scandir(PS_ADMIN_DIR.'/tabs/override');
+		}
+		else
+		{
+			$tabs_override = array();
+		}
+		
 
 		$tabs = array_merge($tabs, $tabs_override);
 		$tabs[] = '../../classes/AdminTab.php';
