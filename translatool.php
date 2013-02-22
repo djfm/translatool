@@ -215,33 +215,46 @@ class Translatool extends Module
 		foreach ($tabs AS $tab)
 		{
 			$filename = $tab;
-			if (preg_match('/^(.*)\.php$/', $tab) AND (($regular = file_exists($tpl = PS_ADMIN_DIR.'/tabs/'.$filename)) OR ($override = file_exists($override_tpl = PS_ADMIN_DIR.'/tabs/override/'.$filename))))
+			if (preg_match('/^(.*)\.php$/', $tab) )
 			{
-				$tab = basename(substr($tab, 0, -4));
-				
-				if(isset($regular) and $regular)
+				$tpl = PS_ADMIN_DIR.'/tabs/'.$filename;
+				$override_tpl = PS_ADMIN_DIR.'/tabs/override/'.$filename;
+				$regular = file_exists($tpl);
+				$override     = file_exists($override_tpl);
+
+				if($regular or $override)
 				{
-					//echo "<p>$tpl</p>";
-					$content = file_get_contents($tpl);
-				}
-				else $content = '';
-				
-				if(isset($override) and $override)
-				{
-					//echo "<p><b>$override_tpl</b></p>";
+					$tab = basename(substr($tab, 0, -4));
 					
-					$override_content = file_get_contents($override_tpl);
+					if($regular)
+					{
+						//echo "<p>$tpl</p>";
+						$content = file_get_contents($tpl);
+					}
+					else $content = '';
 					
-					//echo "<pre>".htmlentities($override_content)."</pre>";
-					$content .= "\n" . $override_content;
-				}
-				
-				$regex = '/this->l\(\''._PS_TRANS_PATTERN_.'\'[\)|\,]/U';
-				preg_match_all($regex, $content, $matches);
-				foreach ($matches[1] AS $key)
-				{
-					$wkey = $tab.md5($key);
-					$found[$wkey] = array("group" => $tab, "ekey" => $key);
+					if($override)
+					{
+						//echo "<p><b>$override_tpl</b></p>";
+						if(!file_exists($override_tpl))
+						{
+							var_dump($override);
+							var_dump($override_tpl);
+							echo "<p><b>OOPS</b></p>";
+						}
+						$override_content = file_get_contents($override_tpl);
+						
+						//echo "<pre>".htmlentities($override_content)."</pre>";
+						$content .= "\n" . $override_content;
+					}
+					
+					$regex = '/this->l\(\''._PS_TRANS_PATTERN_.'\'[\)|\,]/U';
+					preg_match_all($regex, $content, $matches);
+					foreach ($matches[1] AS $key)
+					{
+						$wkey = $tab.md5($key);
+						$found[$wkey] = array("group" => $tab, "ekey" => $key);
+					}
 				}
 			}
 		}
