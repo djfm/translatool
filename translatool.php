@@ -779,7 +779,49 @@ class Translatool extends Module
 		
 	}
 	
-	public function getAllKeys()
+	private $translation_files = array();
+	public function getTranslation($section, $filepath, $iso, $key)
+	{
+		if(false !== strpos($section, 'Mails') and false === strpos($filepath, '/lang.php'))
+		{
+			if(file_exists($filepath))return file_get_contents($filepath);
+			else return '';
+		}
+
+		if(!isset($this->translation_files[$iso]))$this->translation_files[$iso]=array();
+		if(!isset($this->translation_files[$iso][$filepath]))$this->translation_files[$iso][$filepath]=$this->getTranslationsArray($filepath);
+		$array = $this->translation_files[$iso][$filepath];
+		if(isset($array[$key]))return $array[$key];
+		else return '';
+	}
+
+	public function getTranslationsArray($filepath)
+    {
+            $translations = array();
+
+            $array_name = "";
+
+$exp = <<<'NOW'
+/\s*\$\w+\s*\[\s*'(.*?[^\\])'\s*\]\s*=\s*'(.*?[^\\])'\s*;\s*/
+NOW;
+
+            if(file_exists($filepath))
+            {
+                    $matches = array();
+                    $n = preg_match_all($exp, file_get_contents($filepath), $matches);
+                    if($n !== false)
+                    {
+                            for($i=0; $i < $n; $i+=1)
+                            {
+                                    $translations[$matches[1][$i]] = $matches[2][$i];
+                            }
+                    }
+            }
+            return $translations;
+    }
+
+
+	public function getAllKeys($iso)
 	{
 		if(version_compare(_PS_VERSION_, "1.5", ">="))
 		{
@@ -790,14 +832,14 @@ class Translatool extends Module
 			$methods = array('getBackKeys14','getFrontKeys14','getPDFKeys14','getModulesKeys14','getErrorsKeys14','getFieldsKeys14','getMailKeys14');		
 		}
 		
-		
-		$path = dirname(__FILE__).'/_'._PS_VERSION_.'.csv';
+		$outname = $iso.'_'._PS_VERSION_.'.csv';
+		$path = dirname(__FILE__).'/'.$outname;
 		
 		$file = fopen($path, 'w');
 		if($file)
 		{
 			fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
-			
+
 			foreach($methods as $method)
 			{
 				//echo "<p>$method</p>";
@@ -805,7 +847,10 @@ class Translatool extends Module
 				//echo "<p>OK</p>";
 				foreach($arr as $row)
 				{
-					fputcsv($file, array($row['language'], $row['section'], $row['storage file path'], $row['array name'], @$row['group'], @$row['subgroup'], $row['array key'], $row['english string']), ';', '"');
+					$storage  = str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+					$filepath = _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
+					$translation = $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
+					fputcsv($file, array($iso, $row['section'], $storage, $row['array name'], @$row['group'], @$row['subgroup'], $row['array key'], $row['english string'], $translation), ';', '"');
 				}
 			}
 			
@@ -816,15 +861,25 @@ class Translatool extends Module
 			echo "<p>Problem with file!!</p>";
 		}
 		
-		return '_'._PS_VERSION_.'.csv';
+		return $outname;
 	}
 
 	public function getContent()
 	{
 		global $smarty;
 		
-		$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys();
+		$download_url = false;
+		if($iso = Tools::getValue('iso'))
+		{
+			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys($iso);
+		}
+
 		
+		$languages = Language::getLanguages(false);
+		$smarty->assign('languages',$languages);
+		$smarty->assign('token',Tools::getValue('token'));
+		
+
 		$smarty->assign('download_url',$download_url);
 		
 		return $smarty->fetch($this->abspath('views/templates/back/content.tpl.html'));
