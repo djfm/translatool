@@ -1,21 +1,62 @@
 <style type="text/css">
-	
+	form label.label
+	{
+		clear:both;
+		font-weight: bold;
+	}
+	.pull-left
+	{
+		float:left;
+	}
 </style>
 
-<form action="">
-	<lablel>Language to export</label>
-	<input type="hidden" name="tab"       value="AdminModules"/>
-	<input type="hidden" name="configure" value="translatool" />
-	<input type="hidden" name="token"     value="{$token}" />
-
-	<select name="iso">
-		{foreach from=$languages item=language}
-			<option>{$language['iso_code']}</option>
-		{/foreach}
-	</select>
-	<button>Export Strings &amp; Translations</button>
-</form>
-
-{if $download_url !== false}
-	<a  class="button" href={$download_url}>Download Keys File</a>
+{if isset($oops)}
+	<div class="error">{$oops}</div>
 {/if}
+
+{if isset($yay)}
+	<div class="conf">{$yay}</div>
+{/if}
+
+<fieldset>
+	<legend>Export</legend>
+	<form for="iso" action="">
+		
+		<input type="hidden" name="tab"       value="AdminModules"/>
+		<input type="hidden" name="configure" value="translatool" />
+		<input type="hidden" name="token"     value="{$token}" />
+		<input type="hidden" name="action"    value="export" />
+
+		<label class="label">Language to export</label>
+		<br/>
+		<select id="iso" name="iso">
+			{foreach from=$languages item=language}
+				<option {if isset($iso) and $language['iso_code']==$iso}selected{/if}>{$language['iso_code']}</option>
+			{/foreach}
+		</select>
+		<button>Export Strings &amp; Translations</button>
+
+		{if $download_url !== false}
+			<a  class="button" href={$download_url}>Download Keys File</a>
+		{/if}
+
+	</form>
+</fieldset>
+
+<br/>
+
+<fieldset>
+	<legend>Import</legend>
+	<form action="" method="post" enctype="multipart/form-data">
+
+		<input type="hidden" name="tab"       value="AdminModules"/>
+		<input type="hidden" name="configure" value="translatool" />
+		<input type="hidden" name="token"     value="{$token}" />
+		<input type="hidden" name="action"    value="import" />
+
+		<label class="label" for="csv">Import a CSV</label>
+		<br>
+		<input name="csv" id="file" type="file"/>
+		<button>Import!</button>
+	</form>
+</fieldset>

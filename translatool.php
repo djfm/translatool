@@ -106,6 +106,8 @@ class Translatool extends Module
 		$arr = $this->getStringsFromTC('front','tabsArray');
 		$res = array();
 		
+		$theme = _THEME_NAME_ == 'prestashop' ? 'default' : _THEME_NAME_;
+
 		foreach($arr as $template_name => $strings)
 		{
 			foreach($strings as $string => $unused)
@@ -113,7 +115,7 @@ class Translatool extends Module
 				$key = $template_name .'_' . md5($string);
 				$res[] = array('language' 			=> 'en',
 								'section'  			=> '1 - Front-Office',
-								'storage file path' => "/themes/default/lang/en.php",
+								'storage file path' => "/themes/$theme/lang/en.php",
 								'array name' 		=> '$_LANG',
 								'array key' 		=> $key,
 								'english string' 	=> $string,
@@ -144,6 +146,8 @@ class Translatool extends Module
 				$regex = '/\{l s=\''._PS_TRANS_PATTERN_.'\'( js=1)?\}/U';
 				preg_match_all($regex, $content, $matches);
 
+				$theme = _THEME_NAME_ == 'prestashop' ? 'default' : _THEME_NAME_;
+
 				/* Get string translation */
 				foreach($matches[1] AS $key)
 				{
@@ -155,7 +159,7 @@ class Translatool extends Module
 							$found[$tkey] = $key;
 							$res[] = array( 'language' 			=> 'en',
 											'section'  			=> '1 - Front-Office',
-											'storage file path' => "/themes/prestashop/lang/en.php",
+											'storage file path' => "/themes/$theme/lang/en.php",
 											'array name' 		=> '$_LANG',
 											'array key' 		=> $tkey,
 											'english string' 	=> $key,
@@ -363,14 +367,22 @@ class Translatool extends Module
 		{
 			foreach($module as $module_name => $template)
 			{
+				if($theme_name == 'default')$theme_name = 'prestashop';
+				$path = "/modules/$module_name/translations/en.php";
+
+				if($theme_name != 'prestashop')
+				{
+					$path = '/themes/' . _THEME_NAME_ . $path;
+				}
+
 				foreach($template as $template_name => $strings)
 				{
 					foreach($strings as $string => $unused)
 					{
-						$key = '<{'.strtolower($module_name).'}prestashop>'.strtolower($template_name).'_'.md5($string);
+						$key = '<{'.strtolower($module_name)."}$theme_name>".strtolower($template_name).'_'.md5($string);
 						$res[] = array('language' 			=> 'en',
 										'section'  			=> '4 - Modules',
-										'storage file path' => "/modules/$module_name/translations/en.php",
+										'storage file path' => $path,
 										'array name' 		=> '$_MODULE',
 										'array key' 		=> $key,
 										'group'				=> $module_name,
@@ -413,6 +425,14 @@ class Translatool extends Module
 			if($theme_name == 'default')$theme_name = 'prestashop';
 			foreach($theme as $module_name => $files)
 			{
+				
+				$path = "/modules/$module_name/en.php";
+
+				if($theme_name != 'prestashop')
+				{
+					$path = '/themes/' . _THEME_NAME_ . $path;
+				}
+
 				foreach($files as $file_name => $translations)
 				{
 					foreach($translations as $ekey => $translation_unused)
@@ -420,7 +440,7 @@ class Translatool extends Module
 						$wkey = strtolower("<{{$module_name}}$theme_name>{$file_name}_".md5($ekey));
 						$res[] = array( 'language' 			=> 'en',
 										'section'  			=> '4 - Modules',
-										'storage file path' => "/modules/$module_name/en.php",
+										'storage file path' => $path,
 										'group'				=> '',
 										'array name' 		=> '$_MODULE',
 										'array key' 		=> $wkey,
@@ -820,6 +840,18 @@ NOW;
             return $translations;
     }
 
+    public static function my_fputcsv($handle, $array, $delim, $quote)
+    {
+    	fputs($handle, implode($delim, array_map(function($item) use ($delim, $quote){
+    			
+    			if(false !== strpos($item, $delim) or false !== strpos($item, $quote) or false !== strpos($item, "\n"))
+    			{
+    				$item = $quote.preg_replace("/(?:$quote)+/", $quote.$quote, $item).$quote;
+    			}
+
+    			return $item;}, 
+    		$array))."\n");
+    }
 
 	public function getAllKeys($iso)
 	{
@@ -838,7 +870,7 @@ NOW;
 		$file = fopen($path, 'w');
 		if($file)
 		{
-			fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
+			static::my_fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
 
 			foreach($methods as $method)
 			{
@@ -847,10 +879,12 @@ NOW;
 				//echo "<p>OK</p>";
 				foreach($arr as $row)
 				{
-					$storage  = str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
-					$filepath = _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
-					$translation = $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
-					fputcsv($file, array($iso, $row['section'], $storage, $row['array name'], @$row['group'], @$row['subgroup'], $row['array key'], $row['english string'], $translation), ';', '"');
+					$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+					$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
+					$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
+					$group 			= isset($row['group']) 		? $row['group'] 	: '';
+					$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+					static::my_fputcsv($file, array($iso, $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string'], $translation), ';', '"');
 				}
 			}
 			
@@ -869,11 +903,34 @@ NOW;
 		global $smarty;
 		
 		$download_url = false;
-		if($iso = Tools::getValue('iso'))
-		{
-			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys($iso);
-		}
+		$action = Tools::getValue('action');
 
+		if($iso = Tools::getValue('iso') and $action == 'export')
+		{
+			$smarty->assign('iso',$iso);
+			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys($iso);
+			$smarty->assign('yay', "Should be OK :)");
+		}
+		else if($action == 'import')
+		{
+			if(isset($_FILES['csv']) and $_FILES['csv']['error'] == 0)
+			{
+				$res = $this->import($_FILES['csv']['tmp_name']);
+
+				if($res === true)
+				{
+					$smarty->assign('yay','Successfully imported translations!');
+				}
+				else
+				{
+					$smarty->assign('oops',$res);
+				}
+			}
+			else
+			{
+				$smarty->assign('oops','Cannot upload file!');
+			}
+		}
 		
 		$languages = Language::getLanguages(false);
 		$smarty->assign('languages',$languages);
@@ -883,6 +940,118 @@ NOW;
 		$smarty->assign('download_url',$download_url);
 		
 		return $smarty->fetch($this->abspath('views/templates/back/content.tpl.html'));
+	}
+
+	public static function CSVForEach($file, $func)
+	{
+	        $f = fopen($file, 'r');
+	        $first_line = fgets($f);
+	        rewind($f);
+
+	        //guess separator
+	        if(substr_count($first_line, ";") > substr_count($first_line, ","))
+	        {
+	                $separator=";";
+	        }
+	        else
+	        {
+	                $separator=",";
+	        }
+
+	        $headers = fgetcsv($f, 0, $separator, '"', '"');
+
+            while($row = fgetcsv($f, 0, $separator, '"', '"'))
+            {
+                    $row = array_combine($headers, $row);
+                    $func($row);
+            }
+
+	        fclose($f);
+	}
+
+
+	public static function slashify($str)
+    {
+            return preg_replace('/\\\\*([\'])/', "\\\\$1", $str);
+    }
+
+
+	public function import($file)
+	{
+		$files = array();
+		$raw   = array();
+
+		static::CSVForEach($file, function($row) use(&$files, &$raw){
+			$iso        	= $row['Language'];
+			$path 			= $row['Storage File Path'];
+			$array_name		= $row['Array Name'];
+			$key  			= $row['Array Key'];
+			$translation 	= $row['Translation'];
+
+			$path = str_replace('[iso]', $iso, $path);
+
+			if($array_name != '')//not an e-mail
+			{
+				if(!isset($files[$path]))
+				{
+					$files[$path] = array('array_name' => $array_name, 'translations' => array());
+				}
+
+				$files[$path]['translations'][$key] = $translation;	
+			}
+			else //email
+			{
+				$raw[$path] = $translation;
+			}
+
+			//echo "$iso $path $array_name $key $translation<BR/>";
+		});
+
+		foreach($files as $path => $data)
+		{
+			$code = "";
+
+			if($data['array_name'] != '$_TABS')
+			{
+				$code = "<?php\n\nglobal {$data['array_name']};\n\n{$data['array_name']} = array();\n\n";
+			}
+			else
+			{
+				$code = "<?php\n\n{$data['array_name']} = array();\n\n";
+			}
+
+			foreach($data['translations'] as $key => $translation)
+			{
+				if($translation != '')
+				{
+					$code .= "{$data['array_name']}['".static::slashify($key)."'] = '" .static::slashify($translation)."';\n";
+				}
+			}
+
+			if($data['array_name'] == '$_TABS')
+			{
+				$code .= 'return $_TABS;';
+			}
+
+			$abspath = _PS_ROOT_DIR_ . '/' . $path;
+
+			/*
+			echo "Writing file: $abspath<BR>";
+			echo "<pre>";
+			echo htmlentities($code);
+			echo "</pre>";*/
+			
+			file_put_contents($abspath, $code);
+
+		}
+
+		foreach($raw as $path => $contents)
+		{
+			//file_put_contents(_PS_ROOT_DIR_ . $path, $contents);
+		}
+
+		return true;
+
 	}
 	
 }
