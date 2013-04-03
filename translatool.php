@@ -864,35 +864,76 @@ NOW;
 			$methods = array('getBackKeys14','getFrontKeys14','getPDFKeys14','getModulesKeys14','getErrorsKeys14','getFieldsKeys14','getMailKeys14');		
 		}
 		
-		$outname = $iso.'_'._PS_VERSION_.'.csv';
+		if($iso === false)
+		{
+			$outname = 'template_'._PS_VERSION_.'.xml';
+		}
+		else
+		{
+			$outname = $iso.'_'._PS_VERSION_.'.csv';
+		}
+
+		
 		$path = dirname(__FILE__).'/'.$outname;
 		
-		$file = fopen($path, 'w');
-		if($file)
+		
+		
+		if($iso !== false)
 		{
-			static::my_fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
+			if($file)
+			{
+				$file = fopen($path, 'w');
+				static::my_fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
 
+				foreach($methods as $method)
+				{
+					//echo "<p>$method</p>";
+					$arr = $this->$method();
+					//echo "<p>OK</p>";
+					foreach($arr as $row)
+					{
+						$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+						$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
+						$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
+						$group 			= isset($row['group']) 		? $row['group'] 	: '';
+						$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+						static::my_fputcsv($file, array($iso, $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string'], $translation), ';', '"');
+					}
+				}
+				fclose($file);
+			}
+		}
+		else
+		{
+			$root = new SimpleXMLElement("<messages/>");
+			
 			foreach($methods as $method)
 			{
 				//echo "<p>$method</p>";
 				$arr = $this->$method();
-				//echo "<p>OK</p>";
 				foreach($arr as $row)
 				{
 					$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
-					$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
-					$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
-					$group 			= isset($row['group']) 		? $row['group'] 	: '';
-					$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
-					static::my_fputcsv($file, array($iso, $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string'], $translation), ';', '"');
+					$m = array();
+					if(preg_match('/(?:\d+\s*\-\s*)?(.*)$/', $row['section'], $m))
+					{
+						$category       = $m[1];
+						$section		= isset($row['group']) 		? $row['group'] 	: '';
+						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+
+						$message = $root->addChild('message');
+						$message->addChild('category', $category);
+						$message->addChild('section', $section);
+						$message->addChild('subsection', $subsection);
+
+						$message->addChild('mkey', htmlentities($row['array key'], ENT_XML1, 'UTF-8', false));
+						$message->addChild('text', htmlentities($row['english string'], ENT_XML1, 'UTF-8', false));
+					}
 				}
 			}
-			
-			fclose($file);
-		}
-		else
-		{
-			echo "<p>Problem with file!!</p>";
+
+			$root->asXML($path);
+
 		}
 		
 		return $outname;
@@ -903,6 +944,7 @@ NOW;
 		global $smarty;
 		
 		$download_url = false;
+		$download_template_url = false;
 		$action = Tools::getValue('action');
 
 		if($iso = Tools::getValue('iso') and $action == 'export')
@@ -910,6 +952,11 @@ NOW;
 			$smarty->assign('iso',$iso);
 			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys($iso);
 			$smarty->assign('yay', "Should be OK :)");
+		}
+		else if($action == 'export_template')
+		{
+			$download_template_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys(false);
+			$smarty->assign('yay', "Exported template!");
 		}
 		else if($action == 'import')
 		{
@@ -937,7 +984,8 @@ NOW;
 		$smarty->assign('token',Tools::getValue('token'));
 		
 
-		$smarty->assign('download_url',$download_url);
+		$smarty->assign('download_url'			, $download_url);
+		$smarty->assign('download_template_url'	, $download_template_url);
 		
 		return $smarty->fetch($this->abspath('views/templates/back/content.tpl.html'));
 	}

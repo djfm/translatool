@@ -46,6 +46,26 @@
 <br/>
 
 <fieldset>
+	<legend>Export for Translation Tool</legend>
+	<form for="iso" action="">
+		
+		<input type="hidden" name="tab"       value="AdminModules"/>
+		<input type="hidden" name="configure" value="translatool" />
+		<input type="hidden" name="token"     value="{$token}" />
+		<input type="hidden" name="action"    value="export_template" />
+
+		<button type="submit">Export XML Template!</button>
+
+		{if $download_template_url !== false}
+			<a  class="button" href={$download_template_url}>Download template!</a>
+		{/if}
+
+	</form>
+</fieldset>
+
+<br/>
+
+<fieldset>
 	<legend>Import</legend>
 	<form action="" method="post" enctype="multipart/form-data">
 
