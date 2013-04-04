@@ -857,7 +857,7 @@ NOW;
 	{
 		//Ignore the "Constant _PS_THEME_SELECTED_DIR_ already defined error : this is 'normal'"
 		set_error_handler(function($errno, $errstr, $errfile, $errline, $errcontext){
-			return $errno == 8;
+			return $errno == 8 and strpos($errstr, "_PS_THEME_SELECTED_DIR_") >= 0;
 		});//*/
 
 		if(version_compare(_PS_VERSION_, "1.5", ">="))
@@ -882,19 +882,16 @@ NOW;
 		$path = dirname(__FILE__).'/'.$outname;
 		
 		
-		
 		if($iso !== false)
 		{
+			$file = fopen($path, 'w');
 			if($file)
 			{
-				$file = fopen($path, 'w');
 				static::my_fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
 
 				foreach($methods as $method)
 				{
-					//echo "<p>$method</p>";
 					$arr = $this->$method();
-					//echo "<p>OK</p>";
 					foreach($arr as $row)
 					{
 						$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
