@@ -855,6 +855,11 @@ NOW;
 
 	public function getAllKeys($iso)
 	{
+		//Ignore the "Constant _PS_THEME_SELECTED_DIR_ already defined error : this is 'normal'"
+		set_error_handler(function($errno, $errstr, $errfile, $errline, $errcontext){
+			return $errno == 8;
+		});//*/
+
 		if(version_compare(_PS_VERSION_, "1.5", ">="))
 		{
 			$methods = array('getBackKeys','getTabsKeys','getFrontKeys','getPDFKeys','getModulesKeys','getErrorsKeys','getFieldsKeys','getMailKeys');
@@ -909,11 +914,10 @@ NOW;
 			
 			foreach($methods as $method)
 			{
-				//echo "<p>$method</p>";
 				$arr = $this->$method();
 				foreach($arr as $row)
 				{
-					$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+					$storagepath  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
 					$m = array();
 					if(preg_match('/(?:\d+\s*\-\s*)?(.*)$/', $row['section'], $m))
 					{
@@ -922,12 +926,15 @@ NOW;
 						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
 
 						$message = $root->addChild('message');
-						$message->addChild('category', $category);
-						$message->addChild('section', $section);
-						$message->addChild('subsection', $subsection);
+						$message->addChild('category'	, $category			);
+						$message->addChild('section'	, $section 			);
+						$message->addChild('subsection'	, $subsection		);
+						$message->addChild('method'		, ($row['array name'] != '' && $row['array name'] != null) ? 'ARRAY' : 'FILE');
+						$message->addChild('custom'		, $row['array name']);  
+						$message->addChild('path'		, $storagepath		);
 
-						$message->addChild('mkey', htmlentities($row['array key'], ENT_XML1, 'UTF-8', false));
-						$message->addChild('text', htmlentities($row['english string'], ENT_XML1, 'UTF-8', false));
+						$message->addChild('mkey', htmlentities($row['array key'], ENT_XML1));
+						$message->addChild('text', htmlentities($row['english string'], ENT_XML1));
 					}
 				}
 			}
@@ -936,6 +943,8 @@ NOW;
 
 		}
 		
+		restore_error_handler();
+
 		return $outname;
 	}
 
