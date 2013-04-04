@@ -922,11 +922,15 @@ NOW;
 						$section		= isset($row['group']) 		? $row['group'] 	: '';
 						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
 
-						$message = $root->addChild('message');
+						$method 		= ($row['array name'] != '' && $row['array name'] != null) ? 'ARRAY' : 'FILE';
+						$type  			= $method == 'ARRAY' ? 'STRING' : (preg_match("/\.html$/", $storagepath) ? 'HTML' : 'TXT');
+
+						$message = $root->addChild('message');		
 						$message->addChild('category'	, $category			);
 						$message->addChild('section'	, $section 			);
 						$message->addChild('subsection'	, $subsection		);
-						$message->addChild('method'		, ($row['array name'] != '' && $row['array name'] != null) ? 'ARRAY' : 'FILE');
+						$message->addChild('method'		, $method 			);
+						$message->addChild('type'		, $type 			);
 						$message->addChild('custom'		, $row['array name']);  
 						$message->addChild('path'		, $storagepath		);
 
