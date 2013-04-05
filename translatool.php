@@ -374,6 +374,10 @@ class Translatool extends Module
 				{
 					$path = '/themes/' . _THEME_NAME_ . $path;
 				}
+				else if(_PS_VERSION_ == '1.5.4.0' && !_PS_MODE_DEV_)//take Remi's bug into account
+				{
+					$path = "/themes/default/modules/$module_name/en.php";
+				}
 
 				foreach($template as $template_name => $strings)
 				{
@@ -860,13 +864,45 @@ NOW;
 			return $errno == 8 and strpos($errstr, "_PS_THEME_SELECTED_DIR_") >= 0;
 		});//*/
 
-		if(version_compare(_PS_VERSION_, "1.5", ">="))
+				
+		if(Tools::getValue('filter_sections'))
 		{
-			$methods = array('getBackKeys','getTabsKeys','getFrontKeys','getPDFKeys','getModulesKeys','getErrorsKeys','getFieldsKeys','getMailKeys');
+			$methods = array();
+
+			$map = array(
+				"Front-Office" 	=> "getFrontKeys",
+				"Back-Office"	=> "getBackKeys",
+				"Modules" 		=> "getModulesKeys",
+				"Errors" 		=> "getErrorsKeys",
+				"Fields" 		=> "getFieldsKeys",
+				"PDF" 			=> "getPDFKeys",
+				"Mails" 		=> "getMailKeys"
+			);
+
+			foreach(Tools::getValue('section') as $section)
+			{
+				if(isset($map[$section]))
+				{
+					if($section == 'Back-Office')
+					{
+						//back-office needs to be first for some mystical reason
+						$methods = array_unshift($methods, $map[$section]);
+					}
+					else
+					{
+						$methods[] = $map[$section];
+					}
+				}
+			}
 		}
 		else
 		{
-			$methods = array('getBackKeys14','getFrontKeys14','getPDFKeys14','getModulesKeys14','getErrorsKeys14','getFieldsKeys14','getMailKeys14');		
+			$methods = array('getTabsKeys','getBackKeys','getFrontKeys','getPDFKeys','getModulesKeys','getErrorsKeys','getFieldsKeys','getMailKeys');
+		}
+
+		if(version_compare(_PS_VERSION_, "1.5", "<"))
+		{
+			$methods = array_map(function($item){return $item.'14';}, array_filter($methods, function($v){return $v != 'getTabsKeys';}));	
 		}
 		
 		if($iso === false)

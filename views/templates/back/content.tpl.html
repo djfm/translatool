@@ -49,10 +49,20 @@
 	<legend>Export for Translation Tool</legend>
 	<form for="iso" action="">
 		
-		<input type="hidden" name="tab"       value="AdminModules"/>
-		<input type="hidden" name="configure" value="translatool" />
-		<input type="hidden" name="token"     value="{$token}" />
-		<input type="hidden" name="action"    value="export_template" />
+		<input type="hidden" name="tab"       		value="AdminModules"/>
+		<input type="hidden" name="configure" 		value="translatool" />
+		<input type="hidden" name="token"     		value="{$token}" />
+		<input type="hidden" name="action"    		value="export_template" />
+
+		<input type="hidden" name="filter_sections" value="1" />
+
+		<input type="checkbox" name="section[]" value = 'Front-Office' checked>Front-Office</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Back-Office' checked>Back-Office</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Modules' checked>Modules</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Errors' checked>Errors</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Fields' checked>Fields</input><BR/>
+		<input type="checkbox" name="section[]" value = 'PDF' checked>PDF</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Mails' checked>Mails</input><BR/><BR/>
 
 		<button type="submit">Export XML Template!</button>
 
