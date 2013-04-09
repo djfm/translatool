@@ -886,7 +886,7 @@ NOW;
 					if($section == 'Back-Office')
 					{
 						//back-office needs to be first for some mystical reason
-						$methods = array_unshift($methods, $map[$section]);
+						array_unshift($methods, $map[$section]);
 					}
 					else
 					{
