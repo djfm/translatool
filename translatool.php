@@ -970,8 +970,20 @@ NOW;
 						$message->addChild('custom'		, $row['array name']);  
 						$message->addChild('path'		, $storagepath		);
 
-						$message->addChild('mkey', htmlentities($row['array key'], ENT_XML1));
-						$message->addChild('text', htmlentities($row['english string'], ENT_XML1));
+						/*
+						if(defined("ENT_XML1"))
+						{
+							$message->addChild('mkey', htmlentities($row['array key'], ENT_XML1));
+							$message->addChild('text', htmlentities($row['english string'], ENT_XML1));
+						}
+						else
+						{
+							$message->addChild('mkey', htmlentities($row['array key']));
+							$message->addChild('text', htmlentities($row['english string']));
+						}*/
+						
+						$message->addChild('mkey', htmlspecialchars($row['array key']));
+						$message->addChild('text', htmlspecialchars($row['english string']));
 					}
 				}
 			}
