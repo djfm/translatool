@@ -876,7 +876,8 @@ NOW;
 				"Errors" 		=> "getErrorsKeys",
 				"Fields" 		=> "getFieldsKeys",
 				"PDF" 			=> "getPDFKeys",
-				"Mails" 		=> "getMailKeys"
+				"Mails" 		=> "getMailKeys",
+				"Tabs"			=> "getTabsKeys"
 			);
 
 			foreach(Tools::getValue('section') as $section)
