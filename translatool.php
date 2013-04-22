@@ -374,7 +374,7 @@ class Translatool extends Module
 				{
 					$path = '/themes/' . _THEME_NAME_ . $path;
 				}
-				else if(_PS_VERSION_ == '1.5.4.0' && !_PS_MODE_DEV_)//take Remi's bug into account
+				else if((_PS_VERSION_ == '1.5.4.0' || _PS_VERSION_ == '1.5.4.1') && !_PS_MODE_DEV_)//take Remi's bug into account
 				{
 					$path = "/themes/default/modules/$module_name/en.php";
 				}
@@ -678,7 +678,7 @@ class Translatool extends Module
 								'section'  				=> '7 - Mails',
 								'storage file path' 	=> ($sfp = $mail_root.$file_name.".html"),
 								'array name' 			=> '',
-								'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+								'array key' 			=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
 								'english string' 		=> $info['html']['en'],
 								'group'					=> $file_name,
 								'subgroup'				=> 'HTML Version');
@@ -689,7 +689,7 @@ class Translatool extends Module
 									'section'  				=> '7 - Mails',
 									'storage file path' 	=> ($sfp = $mail_root.$file_name.".txt"),
 									'array name' 			=> '',
-									'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+									'array key' 			=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
 									'english string' 		=> $info['txt']['en'],
 									'group'					=> $file_name,
 									'subgroup'				=> 'Plain Text Version');
@@ -780,7 +780,7 @@ class Translatool extends Module
 								'section'  			=> '7 - Mails',
 								'storage file path' => ($sfp = $mail_root.$file_name.".html"),
 								'array name' 		=> '',
-								'array key' 		=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+								'array key' 		=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
 								'english string' 	=> $info['html']['en'],
 								'group'				=> $file_name,
 								'subgroup'			=> 'HTML Version');
@@ -791,7 +791,7 @@ class Translatool extends Module
 									'section'  			    => '7 - Mails',
 									'storage file path' 	=> ($sfp = $mail_root.$file_name.".txt"),
 									'array name' 			=> '',
-									'array key' 			=> "mail_".str_replace('/en/','/[iso]/',$sfp),
+									'array key' 			=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
 									'english string' 		=> $info['txt']['en'],
 									'group'				    => $file_name,
 									'subgroup'				=> 'Plain Text Version');
