@@ -28,6 +28,11 @@
 if (!defined('_PS_VERSION_'))
 	exit;
 
+class TC extends AdminTranslationsController
+{
+
+}
+
 class Translatool extends Module
 {
 	
@@ -68,14 +73,15 @@ class Translatool extends Module
 	{
 		$tc = new AdminTranslationsController();
 		
-		/*
-		$_GET['type'] = $type;
-		*/
+		
+		$_GET['theme'] = 'default';
 		
 		$tc->setTypeSelected($type);
 		$tc->getInformations();
 		
 		$method = 'initForm' . ucfirst($type);
+
+
 		$tc->$method();
 		return $tc->tpl_view_vars[$varname];
 	}
@@ -104,6 +110,7 @@ class Translatool extends Module
 	public function getFrontKeys()
 	{
 		$arr = $this->getStringsFromTC('front','tabsArray');
+
 		$res = array();
 		
 		$theme = _THEME_NAME_ == 'prestashop' ? 'default' : _THEME_NAME_;
@@ -374,7 +381,7 @@ class Translatool extends Module
 				{
 					$path = '/themes/' . _THEME_NAME_ . $path;
 				}
-				else if((_PS_VERSION_ == '1.5.4.0' || _PS_VERSION_ == '1.5.4.1') && !_PS_MODE_DEV_)//take Remi's bug into account
+				else if((_PS_VERSION_ == '1.5.4.0') && !_PS_MODE_DEV_)//take Remi's bug into account
 				{
 					$path = "/themes/default/modules/$module_name/en.php";
 				}
