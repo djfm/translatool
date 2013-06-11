@@ -641,10 +641,7 @@ class Translatool extends Module
 				{
 					$subject_mail = $m_getSubjectMail->invoke($tc,$dir, $file, $subject_mail);
 
-					if($file == "ContactController.php")
-					{
-							$mccl = array_merge($mccl, $this->getMailColonColonLStrings($dir.$file));
-					}
+					$mccl = array_merge($mccl, $this->getMailColonColonLStrings($dir.$file));
 				}
 			}
 		}
@@ -727,7 +724,6 @@ class Translatool extends Module
 			}
 		}
 		
-		//ddd($mccl);
 		if(!empty($mccl))
 		{
 			foreach($mccl as $subject)
@@ -771,10 +767,21 @@ class Translatool extends Module
 			PS_ADMIN_DIR,
 		);
 		
+		$mccl = array();
+
 		$arr_files_to_parse = array_merge($arr_files_to_parse, $modules_has_mails);
 		foreach ($arr_files_to_parse as $path)
 		{
 			$subject_mail = $m_getSubjectMail->invoke($tc, $path, $subject_mail);
+
+			foreach(scandir($path) as $file)
+			{
+				if(preg_match('/.*?\.php$/', $file) and is_file("$path/$file"))
+				{
+					$mccl = array_merge($mccl, $this->getMailColonColonLStrings("$path/$file"));
+					
+				}
+			}
 		}
 		
 		$core_mails = $tc->getMailFiles(_PS_MAIL_DIR_, 'en', 'core_mail');
@@ -819,28 +826,49 @@ class Translatool extends Module
 									'english string' 	=> $info['subject'],
 									'group'				=> $file_name,
 									'subgroup'			=> 'Subject');
+
+					$mccl = array_diff($mccl, array($info['subject']));
 				}
 				
+				if(Tools::getValue('only_mail_subjects') != 1)
+				{
+
+					$res[] = array( 'language' 			=> 'en',
+									'section'  			=> '7 - Mails',
+									'storage file path' => ($sfp = $mail_root.$file_name.".html"),
+									'array name' 		=> '',
+									'array key' 		=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
+									'english string' 	=> $info['html']['en'],
+									'group'				=> $file_name,
+									'subgroup'			=> 'HTML Version');
+					
+					if(isset($info['txt']))
+					{
+						$res[] = array( 'language' 				=> 'en',
+										'section'  			    => '7 - Mails',
+										'storage file path' 	=> ($sfp = $mail_root.$file_name.".txt"),
+										'array name' 			=> '',
+										'array key' 			=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
+										'english string' 		=> $info['txt']['en'],
+										'group'				    => $file_name,
+										'subgroup'				=> 'Plain Text Version');
+					}
+				}
+			}
+		}
+
+		if(!empty($mccl))
+		{
+			foreach($mccl as $subject)
+			{
 				$res[] = array( 'language' 			=> 'en',
 								'section'  			=> '7 - Mails',
-								'storage file path' => ($sfp = $mail_root.$file_name.".html"),
-								'array name' 		=> '',
-								'array key' 		=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
-								'english string' 	=> $info['html']['en'],
-								'group'				=> $file_name,
-								'subgroup'			=> 'HTML Version');
-				
-				if(isset($info['txt']))
-				{
-					$res[] = array( 'language' 				=> 'en',
-									'section'  			    => '7 - Mails',
-									'storage file path' 	=> ($sfp = $mail_root.$file_name.".txt"),
-									'array name' 			=> '',
-									'array key' 			=> "mail:"._PS_VERSION_.":".str_replace('/en/','/[iso]/',$sfp),
-									'english string' 		=> $info['txt']['en'],
-									'group'				    => $file_name,
-									'subgroup'				=> 'Plain Text Version');
-				}
+								'storage file path' => "/mails/en/lang.php",
+								'array name' 		=> '$_LANGMAIL',
+								'array key' 		=> $subject,
+								'english string' 	=> $subject,
+								'group'				=> 'generic',
+								'subgroup' 			=> 'Subject');
 			}
 		}
 		
