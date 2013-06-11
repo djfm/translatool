@@ -28,11 +28,6 @@
 if (!defined('_PS_VERSION_'))
 	exit;
 
-class TC extends AdminTranslationsController
-{
-
-}
-
 class Translatool extends Module
 {
 	
