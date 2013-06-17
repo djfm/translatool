@@ -371,25 +371,34 @@ class Translatool extends Module
 
 		if($nzg == '0' or $nzg == '1')
 		{
-			$modlist = $this->nonZipModules();
-			if(!is_array($modlist))
+			$nonzipmodlist = $this->nonZipModules();
+			if(!is_array($nonzipmodlist))
 			{
 				//Unsafe to continue, don't know what the modules are!
 				return $res;
 			}
 		}
-		
+
+		$zipmodlist = $this->zipModules();
+
+
 		foreach($arr as $theme_name => $module)
 		{
 			foreach($module as $module_name => $template)
 			{	
 				//Exclude PrestaShop-modules repo
-				if($nzg == '0' and isset($modlist[$module_name]))
+				if($nzg == '0' and isset($nonzipmodlist[$module_name]))
 				{
 					continue;
 				}
 				//Exclude NON PrestaShop-modules repo
-				else if($nzg == '1' and !isset($modlist[$module_name]))
+				else if($nzg == '1' and !isset($nonzipmodlist[$module_name]))
+				{
+					continue;
+				}
+
+				//Exclude foreign modules
+				if(!isset($zipmodlist[$module_name]) && !isset($nonzipmodlist[$module_name]))
 				{
 					continue;
 				}
@@ -1110,6 +1119,23 @@ NOW;
 		$gh = new GitHub\Client();
 
 		foreach($gh->dir("PrestaShop", "PrestaShop-modules") as $entry)
+		{
+			if($entry['type'] == 'dir')
+			{
+				$modules[$entry['name']] = $entry;
+			}
+		}
+
+		return $modules;
+	}
+
+	public function zipModules()
+	{
+		$modules = array();
+
+		$gh = new GitHub\Client();
+
+		foreach($gh->dir("PrestaShop", "PrestaShop", "modules") as $entry)
 		{
 			if($entry['type'] == 'dir')
 			{
