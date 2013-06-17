@@ -28,6 +28,8 @@
 if (!defined('_PS_VERSION_'))
 	exit;
 
+require_once __DIR__ . '/github.php';
+
 class Translatool extends Module
 {
 	
@@ -364,13 +366,44 @@ class Translatool extends Module
 		$arr = $this->getStringsFromTC('modules','modules_translations');
 		
 		$res = array();
+
+		$nzg = Tools::getValue('non_zip_github');
+
+		if($nzg == '0' or $nzg == '1')
+		{
+			$modlist = $this->nonZipModules();
+			if(!is_array($modlist))
+			{
+				//Unsafe to continue, don't know what the modules are!
+				return $res;
+			}
+		}
 		
 		foreach($arr as $theme_name => $module)
 		{
 			foreach($module as $module_name => $template)
-			{
+			{	
+				//Exclude PrestaShop-modules repo
+				if($nzg == '0' and isset($modlist[$module_name]))
+				{
+					continue;
+				}
+				//Exclude NON PrestaShop-modules repo
+				else if($nzg == '1' and !isset($modlist[$module_name]))
+				{
+					continue;
+				}
+
 				if($theme_name == 'default')$theme_name = 'prestashop';
-				$path = "/modules/$module_name/translations/en.php";
+
+				if($nzg == '1')
+				{
+					$path = "/modules/$module_name/en.php";
+				}
+				else
+				{
+					$path = "/modules/$module_name/translations/en.php";
+				}
 
 				if($theme_name != 'prestashop')
 				{
@@ -959,7 +992,6 @@ NOW;
 				{
 					if($section == 'Back-Office')
 					{
-						//back-office needs to be first for some mystical reason
 						array_unshift($methods, $map[$section]);
 					}
 					else
@@ -1069,6 +1101,23 @@ NOW;
 		restore_error_handler();
 
 		return $outname;
+	}
+
+	public function nonZipModules()
+	{
+		$modules = array();
+
+		$gh = new GitHub\Client();
+
+		foreach($gh->dir("PrestaShop", "PrestaShop-modules") as $entry)
+		{
+			if($entry['type'] == 'dir')
+			{
+				$modules[$entry['name']] = $entry;
+			}
+		}
+
+		return $modules;
 	}
 
 	public function getContent()
