@@ -150,7 +150,7 @@ class Translatool extends Module
 				$regex = '/\{l s=\''._PS_TRANS_PATTERN_.'\'( js=1)?\}/U';
 				preg_match_all($regex, $content, $matches);
 
-				$theme = _THEME_NAME_ == 'prestashop' ? 'default' : _THEME_NAME_;
+				$theme = _THEME_NAME_;
 
 				/* Get string translation */
 				foreach($matches[1] AS $key)
