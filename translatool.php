@@ -85,7 +85,12 @@ class Translatool extends Module
 
 	public function getTabsKeys()
 	{
-		$sql = "SELECT t.class_name, tl.name FROM ps_tab t INNER JOIN ps_tab_lang tl ON t.id_tab = tl.id_tab WHERE tl.id_lang = 1 ORDER BY tl.name";
+		$sql = "SELECT t.class_name, tl.name FROM ps_tab t 
+				INNER JOIN ps_tab_lang tl ON t.id_tab = tl.id_tab 
+				INNER JOIN ps_lang l ON l.id_lang = tl.id_lang 
+				WHERE l.iso_code = 'en' 
+				ORDER BY tl.name";
+
 		$sql = str_replace('ps_',_DB_PREFIX_,$sql);
 		$arr = Db::getInstance()->query($sql)->fetchAll();
 		
