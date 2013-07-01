@@ -977,8 +977,11 @@ NOW;
     		$array))."\n");
     }
 
-	public function getAllKeys($iso)
+	public function getAllKeys($with_translations)
 	{
+
+		$languages = Language::getLanguages(false);
+
 		//Ignore the "Constant _PS_THEME_SELECTED_DIR_ already defined error : this is 'normal'"
 		set_error_handler(function($errno, $errstr, $errfile, $errline, $errcontext){
 			return $errno == 8 and strpos($errstr, "_PS_THEME_SELECTED_DIR_") >= 0;
@@ -1025,25 +1028,35 @@ NOW;
 			$methods = array_map(function($item){return $item.'14';}, array_filter($methods, function($v){return $v != 'getTabsKeys';}));	
 		}
 		
-		if($iso === false)
+		if($with_translations === false)
 		{
 			$outname = 'template_'._PS_VERSION_.'.xml';
 		}
 		else
 		{
-			$outname = $iso.'_'._PS_VERSION_.'.csv';
+			$outname = 'multilang_'._PS_VERSION_.'.csv';
 		}
 
 		
 		$path = dirname(__FILE__).'/'.$outname;
 		
 		
-		if($iso !== false)
+		if($with_translations !== false)
 		{
+
+
+
 			$file = fopen($path, 'w');
 			if($file)
 			{
-				static::my_fputcsv($file, array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String', 'Translation'), ';', '"');
+				$headers = array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String');
+
+				foreach($languages as $language)
+				{
+					$headers[] = $language['iso_code'];
+				}
+
+				static::my_fputcsv($file, $headers, ';', '"');
 
 				foreach($methods as $method)
 				{
@@ -1051,11 +1064,25 @@ NOW;
 					foreach($arr as $row)
 					{
 						$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
-						$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
-						$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
+						
 						$group 			= isset($row['group']) 		? $row['group'] 	: '';
 						$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
-						static::my_fputcsv($file, array($iso, $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string'], $translation), ';', '"');
+
+						$data = array('[iso]', $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string']);
+
+						foreach($languages as $language)
+						{
+							$iso 			= $language['iso_code'];
+							$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
+							$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
+
+							$isos[] 		= $iso;
+							$data[]			= $translation;
+						}
+						
+						
+
+						static::my_fputcsv($file, $data, ';', '"');
 					}
 				}
 				fclose($file);
@@ -1159,10 +1186,10 @@ NOW;
 		$download_template_url = false;
 		$action = Tools::getValue('action');
 
-		if($iso = Tools::getValue('iso') and $action == 'export')
+		if($action == 'export')
 		{
 			$smarty->assign('iso',$iso);
-			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys($iso);
+			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys(true);
 			$smarty->assign('yay', "Should be OK :)");
 		}
 		else if($action == 'export_template')
