@@ -29,6 +29,7 @@ if (!defined('_PS_VERSION_'))
 	exit;
 
 require_once __DIR__ . '/github.php';
+require_once __DIR__ . '/lib/PHPExcel.php';
 
 class Translatool extends Module
 {
@@ -1034,7 +1035,7 @@ NOW;
 		}
 		else
 		{
-			$outname = 'multilang_'._PS_VERSION_.'.csv';
+			$outname = 'multilang_'._PS_VERSION_.'.xls';
 		}
 
 		
@@ -1043,50 +1044,62 @@ NOW;
 		
 		if($with_translations !== false)
 		{
+			$xl 	   = new PHPExcel();
+			$sh 	   = $xl->setActiveSheetIndex(0);
 
+			$row = 1;
 
+			$headers = array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String');
 
-			$file = fopen($path, 'w');
-			if($file)
+			foreach($languages as $language)
 			{
-				$headers = array('Language', 'Section', 'Storage File Path', 'Array Name', 'Group', 'SubGroup', 'Array Key', 'English String');
-
-				foreach($languages as $language)
-				{
-					$headers[] = $language['iso_code'];
-				}
-
-				static::my_fputcsv($file, $headers, ';', '"');
-
-				foreach($methods as $method)
-				{
-					$arr = $this->$method();
-					foreach($arr as $row)
-					{
-						$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
-						
-						$group 			= isset($row['group']) 		? $row['group'] 	: '';
-						$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
-
-						$data = array('[iso]', $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string']);
-
-						foreach($languages as $language)
-						{
-							$iso 			= $language['iso_code'];
-							$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
-							$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
-
-							$isos[] 		= $iso;
-							$data[]			= $translation;
-						}
-						
-						
-
-						static::my_fputcsv($file, $data, ';', '"');
-					}
-				}
-				fclose($file);
+				$headers[] = $language['iso_code'];
 			}
+
+			$col = 'A';
+			foreach($headers as $h)
+			{
+				$sh->getCell("{$col}1")->setValue($h);
+				++$col;
+			}
+
+			$line = 2;
+
+			foreach($methods as $method)
+			{
+				$arr = $this->$method();
+				foreach($arr as $row)
+				{
+					$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+					
+					$group 			= isset($row['group']) 		? $row['group'] 	: '';
+					$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+
+					$data = array('[iso]', $row['section'], $storage, $row['array name'], $group, $subgroup, $row['array key'], $row['english string']);
+
+					foreach($languages as $language)
+					{
+						$iso 			= $language['iso_code'];
+						$filepath 		= _PS_ROOT_DIR_ . str_replace('/en.php', "/$iso.php", str_replace('/en/', "/$iso/", $row['storage file path']));
+						$translation 	= $this->getTranslation($row['section'], $filepath, $iso, $row['array key']);
+
+						$data[]			= $translation;
+					}
+					
+					$col = 'A';
+					foreach($data as $d)
+					{
+						$sh->getCell("{$col}{$line}")->setValue($d);
+						++$col;
+					}
+
+					++$line;
+				}
+			}
+
+			$objWriter = \PHPExcel_IOFactory::createWriter($xl, 'Excel5');
+			$objWriter->save($path);
+
 		}
 		else
 		{
@@ -1188,7 +1201,6 @@ NOW;
 
 		if($action == 'export')
 		{
-			$smarty->assign('iso',$iso);
 			$download_url = 'http://'.Tools::getShopDomain().__PS_BASE_URI__.'modules/translatool/'.$this->getAllKeys(true);
 			$smarty->assign('yay', "Should be OK :)");
 		}
@@ -1265,37 +1277,59 @@ NOW;
 
 	public function import($file)
 	{
+		$xl = \PHPExcel_IOFactory::load($file);
+		$sh = $xl->setActiveSheetIndex(0);
+		
+		$h2c  = array();
+		$isos = array();
+
+		for($col = 'A'; $v=$sh->getCell("{$col}1")->getValue(); ++$col)
+		{
+			$h2c[$v] = $col;
+			if(preg_match('/^[a-z]{2}$/', $v))
+			{
+				$isos[] = $v;
+			}
+		}
+
 		$files = array();
-		$raw   = array();
 
-		static::CSVForEach($file, function($row) use(&$files, &$raw){
-			$iso        	= $row['Language'];
-			$path 			= $row['Storage File Path'];
-			$array_name		= $row['Array Name'];
-			$key  			= $row['Array Key'];
-			$translation 	= $row['Translation'];
-
-			$path = str_replace('[iso]', $iso, $path);
-
-			if($array_name != '')//not an e-mail
+		for($line=2; $sh->getCell("A$line")->getValue(); ++$line)
+		{
+			foreach($isos as $iso)
 			{
-				if(!isset($files[$path]))
+				$path 			= _PS_ROOT_DIR_ . '/' . str_replace('[iso]', $iso, $sh->getCell($h2c['Storage File Path'].$line)->getValue());
+				$array_name		= $sh->getCell($h2c['Array Name'].$line)->getValue();
+				$key			= $sh->getCell($h2c['Array Key'].$line)->getValue();
+				$translation    = $sh->getCell($h2c[$iso].$line)->getValue();
+
+				if($array_name)
 				{
-					$files[$path] = array('array_name' => $array_name, 'translations' => array());
+					if(!isset($files[$path]))
+					{
+						$files[$path] = array('array_name' => $array_name, 'translations' => array());
+					}
+
+					$files[$path]['translations'][$key] = $translation;
 				}
-
-				$files[$path]['translations'][$key] = $translation;	
 			}
-			else //email
-			{
-				$raw[$path] = $translation;
-			}
-
-			//echo "$iso $path $array_name $key $translation<BR/>";
-		});
+		}
+		
 
 		foreach($files as $path => $data)
 		{
+			if(file_exists($path))
+			{
+				$previous_translations = $this->getTranslationsArray($path);
+			}
+			else
+			{
+				$previous_translations = array();
+			}
+
+			//Take previous translations in priority
+			$translations = array_merge($data['translations'], $previous_translations);
+
 			$code = "";
 
 			if($data['array_name'] != '$_TABS')
@@ -1307,11 +1341,11 @@ NOW;
 				$code = "<?php\n\n{$data['array_name']} = array();\n\n";
 			}
 
-			foreach($data['translations'] as $key => $translation)
+			foreach($translations as $key => $translation)
 			{
-				if($translation != '')
+				if(trim($translation) != '')
 				{
-					$code .= "{$data['array_name']}['".static::slashify($key)."'] = '" .static::slashify($translation)."';\n";
+					$code .= "{$data['array_name']}['".static::slashify($key)."'] = '" .static::slashify(trim($translation))."';\n";
 				}
 			}
 
@@ -1320,21 +1354,8 @@ NOW;
 				$code .= 'return $_TABS;';
 			}
 
-			$abspath = _PS_ROOT_DIR_ . '/' . $path;
-
-			/*
-			echo "Writing file: $abspath<BR>";
-			echo "<pre>";
-			echo htmlentities($code);
-			echo "</pre>";*/
-			
-			file_put_contents($abspath, $code);
-
-		}
-
-		foreach($raw as $path => $contents)
-		{
-			//file_put_contents(_PS_ROOT_DIR_ . $path, $contents);
+			rename($path, $path.".old");
+			file_put_contents($path, $code);
 		}
 
 		return true;
