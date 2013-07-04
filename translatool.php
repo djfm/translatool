@@ -486,6 +486,11 @@ class Translatool extends Module
 				{
 					$path = '/themes/' . _THEME_NAME_ . $path;
 				}
+				else if(Tools::getValue("template_modules") == "1")
+				{
+					//echo "skip $theme_name : $module_name<BR/>";
+					continue;
+				}
 
 				foreach($files as $file_name => $translations)
 				{
@@ -1327,8 +1332,17 @@ NOW;
 				$previous_translations = array();
 			}
 
-			//Take previous translations in priority
-			$translations = array_merge($data['translations'], $previous_translations);
+			if(Tools::getValue('overwrite') == 'overwrite')
+			{
+				//Overwrite translations
+				$translations = array_merge($previous_translations, $data['translations']);
+			}
+			else
+			{
+				//Take previous translations in priority
+				$translations = array_merge($data['translations'], $previous_translations);
+			}
+			
 
 			$code = "";
 
@@ -1353,8 +1367,13 @@ NOW;
 			{
 				$code .= 'return $_TABS;';
 			}
-
-			rename($path, $path.".old");
+			
+			/*
+			if(file_exists($path))
+			{
+				rename($path, $path.".old");
+			}
+			*/
 			file_put_contents($path, $code);
 		}
 
