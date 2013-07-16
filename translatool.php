@@ -43,7 +43,7 @@ class Translatool extends Module
 		parent::__construct();
 
 		$this->displayName = 'Translatool';
-		$this->description = 'Do various things with translations';
+		$this->description = 'Export / Import PrestaShop translations in various formats.';
 		$this->confirmUninstall = 'Are you sure you want to delete this module?';
 	}
 
