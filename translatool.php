@@ -1036,7 +1036,14 @@ NOW;
 		
 		if($with_translations === false)
 		{
-			$outname = 'template_'._PS_VERSION_.'.xml';
+			if(Tools::getValue('xliff') == 'yeah')
+			{
+				$outname = 'template_'._PS_VERSION_.'.xliff';
+			}
+			else
+			{
+				$outname = 'template_'._PS_VERSION_.'.xml';
+			}
 		}
 		else
 		{
@@ -1105,6 +1112,57 @@ NOW;
 			$objWriter = \PHPExcel_IOFactory::createWriter($xl, 'Excel5');
 			$objWriter->save($path);
 
+		}
+		else if(Tools::getValue('xliff') == 'yeah')
+		{
+			$root = new SimpleXMLElement("<xliff version='1.2'/>");
+
+			$files = array();
+
+			foreach($methods as $method)
+			{
+				$arr = $this->$method();
+				foreach($arr as $row)
+				{
+					$storagepath  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+					$m = array();
+					if(preg_match('/(?:\d+\s*\-\s*)?(.*)$/', $row['section'], $m))
+					{
+						$category       = $m[1];
+						$section		= isset($row['group']) 		? $row['group'] 	: '';
+						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+
+						$method 		= ($row['array name'] != '' && $row['array name'] != null) ? 'ARRAY' : 'FILE';
+						$type  			= $method == 'ARRAY' ? 'STRING' : (preg_match("/\.html$/", $storagepath) ? 'HTML' : 'TXT');
+
+						$mkey           = htmlspecialchars($row['array key']);
+						$text 			= htmlspecialchars($row['english string']);
+					}
+
+					if(!isset($files[$storagepath]))
+					{
+						$files[$storagepath] = array();
+					}
+
+					$files[$storagepath][] = array('category' => $category, 'section' => $section, 'subsection' => $subsection, 'method' => $method, 'type' => $type, 'mkey' => $mkey, 'text' => $text);			
+
+				}
+			}
+
+			foreach($files as $p => $messages)
+			{
+				$f = $root->addChild('file');
+				$f->addAttribute('original', $p);
+				foreach($messages as $message)
+				{
+					$tu  = $f->addChild("trans-unit");
+					$tu->addAttribute('id', $message['mkey']);
+					$src = $tu->addChild('source', $message['text']);
+					$src->addAttribute('xml:lang', 'en');
+				}
+			}
+
+			$root->asXML($path);
 		}
 		else
 		{
