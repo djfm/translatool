@@ -8,6 +8,12 @@
 	{
 		float:left;
 	}
+	a.dl {
+		background-color: #DFF2BF;
+		padding: 5px;
+		border: 1px solid black;
+		margin-left: 3px;
+	}
 </style>
 
 {if isset($oops)}
@@ -19,7 +25,8 @@
 {/if}
 
 <fieldset>
-	<legend>Export</legend>
+
+	<legend>Export Excel</legend>
 	<form for="iso" action="">
 		
 		<input type="hidden" name="tab"       value="AdminModules"/>
@@ -28,20 +35,35 @@
 		<input type="hidden" name="action"    value="export" />
 
 		<input type="hidden" name="filter_sections" value="1" />
-		<input type="checkbox" name="section[]" value = 'Front-Office' checked>Front-Office</input><BR/>
-		<input type="checkbox" name="section[]" value = 'Back-Office' checked>Back-Office</input><BR/>
-		<input type="checkbox" name="section[]" value = 'Modules' checked>Modules</input>&nbsp;(<label style='float:none'>Non-Zip Handling</label><select name="non_zip_github"><option value='0' selected>Except</option><option value='1'>Only</option><option value='2'>Don't care</option></select>)&nbsp;(<label style='float:none'>Template modules</label><select name="template_modules"><option value='0' selected>Also</option><option value='1'>Only</option></select>)<BR/>
-		<input type="checkbox" name="section[]" value = 'Errors' checked>Errors</input><BR/>
-		<input type="checkbox" name="section[]" value = 'Fields' checked>Fields</input><BR/>
-		<input type="checkbox" name="section[]" value = 'PDF' checked>PDF</input><BR/>
-		<input type="checkbox" name="section[]" value = 'Mails' checked>Mails</input><BR/>
-		<input type="checkbox" name="section[]" value = 'Tabs' checked>Tabs</input><BR/><BR/>
+		<input type="checkbox" name="section[]" value = 'Front-Office' {if isset($smarty.get.section) and in_array('Front-Office', $smarty.get.section)} checked {/if}>Front-Office</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Back-Office' {if isset($smarty.get.section) and in_array('Back-Office', $smarty.get.section)} checked {/if}>Back-Office</input>
+		<BR/>
+		{if $v15}<BR/>{/if}
+
+		<input type="checkbox" name="section[]" value = 'Modules' {if isset($smarty.get.section) and in_array('Modules', $smarty.get.section)} checked {/if}>Modules</input>{if $v15}&nbsp;(<label style='float:none'>Non-Zip Handling</label><select name="non_zip_github"><option value='2' {if isset($smarty.get.non_zip_github) and $smarty.get.non_zip_github == 2}selected{/if}>Any</option><option value='0' {if isset($smarty.get.non_zip_github) and $smarty.get.non_zip_github == 0}selected{/if}>Except</option><option value='1' {if isset($smarty.get.non_zip_github) and $smarty.get.non_zip_github == 1}selected{/if}>Only</option></select>)&nbsp;(<label style='float:none'>Template modules</label><select name="template_modules" ><option value='0' {if isset($smarty.get.template_modules) and $smarty.get.template_modules == 0}selected{/if}>Also</option><option value='1' {if isset($smarty.get.template_modules) and $smarty.get.template_modules == 1}selected{/if}>Only</option></select>)&nbsp;(<label style='float:none'>Compatibility</label><select name="compatibility"><option value='14' {if isset($smarty.get.compatibility) and $smarty.get.compatibility == '14'}selected{/if}>1.4 and 1.5</option><option value='15' {if isset($smarty.get.compatibility) and $smarty.get.compatibility == '15'}selected{/if}>1.5 only</option></select>)<BR/>
+		You can restrict the exported modules below, if you do not select anything all modules matching the above criteria will have their translations exported.
+		<BR/>
+		<select name="modules[]" multiple="true">
+			{foreach from=$modules item=module}
+				<option value="{$module['name']}" {if isset($smarty.get.modules) and in_array($module['name'], $smarty.get.modules)}selected{/if}>{$module['name']}</option>
+			{/foreach}
+		</select>
+		<BR/>{/if}
+		<BR/>
+		<input type="checkbox" name="section[]" value = 'Errors' {if isset($smarty.get.section) and in_array('Errors', $smarty.get.section)} checked {/if}>Errors</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Fields' {if isset($smarty.get.section) and in_array('Fields', $smarty.get.section)} checked {/if}>Fields</input><BR/>
+		<input type="checkbox" name="section[]" value = 'PDF' {if isset($smarty.get.section) and in_array('PDF', $smarty.get.section)} checked {/if}>PDF</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Mails' {if isset($smarty.get.section) and in_array('Mails', $smarty.get.section)} checked {/if}>Mails</input><BR/>
+		<input type="checkbox" name="section[]" value = 'Tabs' {if isset($smarty.get.section) and in_array('Tabs', $smarty.get.section)} checked {/if}>Tabs</input><BR/><BR/>
 
 		
 		<button>Export Strings &amp; Translations</button>
 
+		<BR/>
+		<BR/>
+
 		{if $download_url !== false}
-			<a  class="button" href={$download_url}>Download Keys File</a>
+			<a  class="dl" href={$download_url}>Download Excel</a>
 		{/if}
 
 	</form>
@@ -61,7 +83,7 @@
 		<input type="hidden" name="filter_sections" value="1" />
 		<input type="checkbox" name="section[]" value = 'Front-Office' >Front-Office</input><BR/>
 		<input type="checkbox" name="section[]" value = 'Back-Office' >Back-Office</input><BR/>
-		<input type="checkbox" name="section[]" value = 'Modules' >Modules</input>&nbsp;(<label style='float:none'>Non-Zip Handling</label><select name="non_zip_github"><option value='0' selected>Except</option><option value='1'>Only</option><option value='2'>Don't care</option></select>)<BR/>
+		<input type="checkbox" name="section[]" value = 'Modules' >Modules</input>{if $v15}&nbsp;(<label style='float:none'>Non-Zip Handling</label><select name="non_zip_github"><option value='0' selected>Except</option><option value='1'>Only</option><option value='2'>Don't care</option></select>){/if}<BR/>
 		<input type="checkbox" name="section[]" value = 'Errors' >Errors</input><BR/>
 		<input type="checkbox" name="section[]" value = 'Fields' >Fields</input><BR/>
 		<input type="checkbox" name="section[]" value = 'PDF' >PDF</input><BR/>
@@ -70,7 +92,7 @@
 		<input type="checkbox" name="section[]" value = 'Tabs' >Tabs</input><BR/><BR/>
 
 		<button type="submit">Export XML Template!</button>
-		<button type="submit" name="xliff" value="yeah">Export XLIFF Template!</button>
+		<button type="submit" name="xliff" value="yeah">Export XLIFF Template! (BETA)</button>
 
 		{if $download_template_url !== false}
 			<a  class="button" href={$download_template_url}>Download template!</a>

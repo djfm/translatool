@@ -383,9 +383,8 @@ class Translatool extends Module
 				//Unsafe to continue, don't know what the modules are!
 				return $res;
 			}
+			$zipmodlist = $this->zipModules();
 		}
-
-		$zipmodlist = $this->zipModules();
 
 
 		foreach($arr as $theme_name => $module)
@@ -399,27 +398,27 @@ class Translatool extends Module
 				}
 				//Exclude NON PrestaShop-modules repo
 				else if($nzg == '1' and !isset($nonzipmodlist[$module_name]))
-				{
+				{					
 					continue;
 				}
 
-				//Exclude foreign modules
-				if(!isset($zipmodlist[$module_name]) && !isset($nonzipmodlist[$module_name]))
+				if(!empty($_GET['modules']) and !in_array($module_name, $_GET['modules']))
 				{
 					continue;
 				}
 
 				if($theme_name == 'default')$theme_name = 'prestashop';
 
-				if($nzg == '1')
-				{
-					$path = "/modules/$module_name/en.php";
-				}
-				else
+
+				if(Tools::getValue('compatibility') == '15')
 				{
 					$path = "/modules/$module_name/translations/en.php";
 				}
-
+				else
+				{
+					$path = "/modules/$module_name/en.php";
+				}
+				
 				if($theme_name != 'prestashop')
 				{
 					$path = '/themes/' . _THEME_NAME_ . $path;
@@ -929,6 +928,7 @@ class Translatool extends Module
 		
 	}
 	
+	/*PB*/
 	private $translation_files = array();
 	public function getTranslation($section, $filepath, $iso, $key)
 	{
@@ -945,7 +945,7 @@ class Translatool extends Module
 		else return '';
 	}
 
-	public function getTranslationsArray($filepath)
+	public function getTranslationsArray($filepath, $pass=0)
     {
             $translations = array();
 
@@ -967,6 +967,17 @@ NOW;
                             }
                     }
             }
+
+            $m = array();
+            if(($pass == 0) and preg_match('#(.*?)/modules/(\w+)(/translations)?/([a-z]{2})\.php$#', $filepath, $m))
+            {
+            	$altpath = "{$m[1]}/modules/{$m[2]}".($m[3] == '/translations' ? '' : '/translations')."/{$m[4]}.php";
+            	if(file_exists($altpath))
+            	{
+            		$translations = array_merge($translations, $this->getTranslationsArray($altpath, 1));
+            	}
+            }
+
             return $translations;
     }
 
@@ -985,7 +996,6 @@ NOW;
 
 	public function getAllKeys($with_translations)
 	{
-
 		$languages = Language::getLanguages(false);
 
 		//Ignore the "Constant _PS_THEME_SELECTED_DIR_ already defined error : this is 'normal'"
@@ -1296,10 +1306,13 @@ NOW;
 		$languages = Language::getLanguages(false);
 		$smarty->assign('languages',$languages);
 		$smarty->assign('token',Tools::getValue('token'));
+		$smarty->assign('modules', Module::getModulesInstalled());
 		
 
 		$smarty->assign('download_url'			, $download_url);
 		$smarty->assign('download_template_url'	, $download_template_url);
+
+		$smarty->assign('v15', version_compare(_PS_VERSION_, "1.5", ">="));
 		
 		return $smarty->fetch($this->abspath('views/templates/back/content.tpl.html'));
 	}
