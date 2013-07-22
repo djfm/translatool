@@ -696,7 +696,7 @@ class Translatool extends Module
 					$mccl = array_merge($mccl, $this->getMailColonColonLStrings($dir.$file));
 				}
 			}
-		}
+        }
 
 		$modules_has_mails = $tc->getModulesHasMails(true);
 		
@@ -735,17 +735,23 @@ class Translatool extends Module
 				}
 				
 				if(isset($info['subject']))
-				{
-					$res[] = array( 'language' 			=> 'en',
-									'section'  			=> '7 - Mails',
-									'storage file path' => "/mails/en/lang.php",
-									'array name' 		=> '$_LANGMAIL',
-									'array key' 		=> $info['subject'],
-									'english string' 	=> $info['subject'],
-									'group'				=> $file_name,
-									'subgroup' 			=> 'Subject');
+                {
 
-					$mccl = array_diff($mccl, array($info['subject']));
+                    $subjects = is_array($info['subject']) ? $info['subject'] : array($info['subject']); //Behavious changed in 1.5.5...
+                    
+                    foreach($subjects as $subject)
+                    {
+
+                        $res[] = array( 'language' 			=> 'en',
+                                        'section'  			=> '7 - Mails',
+                                        'storage file path' => "/mails/en/lang.php",
+                                        'array name' 		=> '$_LANGMAIL',
+                                        'array key' 		=> $subject,
+                                        'english string' 	=> $subject,
+                                        'group'				=> $file_name,
+                                        'subgroup' 			=> 'Subject');
+					    $mccl = array_diff($mccl, array($subject));
+                    }
 				}
 
 				if(Tools::getValue('only_mail_subjects') != 1)
@@ -1178,9 +1184,9 @@ NOW;
 		{
 			$root = new SimpleXMLElement("<messages/>");
 			
-			foreach($methods as $method)
+			foreach($methods as $meth)
 			{
-				$arr = $this->$method();
+				$arr = $this->$meth();
 				foreach($arr as $row)
 				{
 					$storagepath  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
@@ -1215,7 +1221,7 @@ NOW;
 							$message->addChild('text', htmlentities($row['english string']));
 						}*/
 						
-						$message->addChild('mkey', htmlspecialchars($row['array key']));
+                        $message->addChild('mkey', htmlspecialchars($row['array key']));
 						$message->addChild('text', htmlspecialchars($row['english string']));
 					}
 				}
