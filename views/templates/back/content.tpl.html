@@ -83,7 +83,9 @@
 		<input type="hidden" name="configure" 		value="translatool" />
 		<input type="hidden" name="token"     		value="{$token}" />
 		<input type="hidden" name="action"    		value="export_template" />
-
+		{if $v15}
+			<input type="hidden" name="compatibility" value="15"/>
+		{/if}
 		<input type="hidden" name="filter_sections" value="1" />
 		<input type="checkbox" name="section[]" value = 'Front-Office' >Front-Office</input><BR/>
 		<input type="checkbox" name="section[]" value = 'Back-Office' >Back-Office</input><BR/>
