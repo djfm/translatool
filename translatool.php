@@ -1188,7 +1188,9 @@ NOW;
 			{
 				$arr = $this->$meth();
 				foreach($arr as $row)
-				{
+                {
+                    if(trim($row['english string']) == '')continue;
+
 					$storagepath  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
 					$m = array();
 					if(preg_match('/(?:\d+\s*\-\s*)?(.*)$/', $row['section'], $m))
