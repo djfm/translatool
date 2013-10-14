@@ -90,6 +90,9 @@
 		<input type="checkbox" name="section[]" value = 'Front-Office' >Front-Office</input><BR/>
 		<input type="checkbox" name="section[]" value = 'Back-Office' >Back-Office</input><BR/>
 		<input type="checkbox" name="section[]" value = 'Modules' >Modules</input>{if $v15}&nbsp;(<label style='float:none'>Non-Zip Handling</label><select name="non_zip_github"><option value='0' selected>Except</option><option value='1'>Only</option><option value='2'>Don't care</option></select>){/if}<BR/>
+		<div class="margin-form" style="padding: 0px">
+			<label>Module RegExp</label><input name="module_regexp" type="text"></input>
+		</div>
 		<input type="checkbox" name="section[]" value = 'Errors' >Errors</input><BR/>
 		<input type="checkbox" name="section[]" value = 'Fields' >Fields</input><BR/>
 		<input type="checkbox" name="section[]" value = 'PDF' >PDF</input><BR/>

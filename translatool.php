@@ -1199,6 +1199,15 @@ NOW;
 						$section		= isset($row['group']) 		? $row['group'] 	: '';
 						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
 
+						if($category == 'Modules' && ($exp=Tools::getValue('module_regexp'))!='')
+						{
+							if(!preg_match($exp, $section))
+							{
+								//echo "ignoring $section cuz $exp<BR/>";
+								continue;
+							}
+						}
+
 						$method 		= ($row['array name'] != '' && $row['array name'] != null) ? 'ARRAY' : 'FILE';
 						$type  			= $method == 'ARRAY' ? 'STRING' : (preg_match("/\.html$/", $storagepath) ? 'HTML' : 'TXT');
 
