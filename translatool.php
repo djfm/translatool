@@ -654,6 +654,33 @@ class Translatool extends Module
 		}
 
 	}
+
+	public function getMail2Keys()
+	{
+		$tc = new AdminTranslationsController();
+
+		if(!method_exists($tc, 'generateEmails'))
+		{
+			return array();
+		}
+
+		$_POST['lang'] = 'en';
+		$strings = array();
+		$tc->generateEmails(false, $strings);
+		$res = array();
+
+		foreach($strings as $string => $paths)
+		{
+			$res[] = array( 'language' 			=> 'en',
+							'section'  			=> '8 - Mails2',
+							'storage file path' => implode(',', $paths),
+							'array name' 		=> '',
+							'array key' 		=> md5($string),
+							'english string' 	=> $string);
+		}
+
+		return $res;
+	}
 	
 	public function getMailKeys()
 	{
@@ -1022,7 +1049,8 @@ NOW;
 				"Fields" 		=> "getFieldsKeys",
 				"PDF" 			=> "getPDFKeys",
 				"Mails" 		=> "getMailKeys",
-				"Tabs"			=> "getTabsKeys"
+				"Tabs"			=> "getTabsKeys",
+				"Mails2" 		=> "getMail2Keys"
 			);
 
 			foreach(Tools::getValue('section') as $section)
@@ -1098,8 +1126,9 @@ NOW;
 				$arr = $this->$method();
 				foreach($arr as $row)
 				{
-					$storage  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
-					
+					$storage  		= str_replace('/en.php', '/[iso].php', $row['storage file path']);
+					$storage 		= str_replace('/en/', '/[iso]/', $storage); 
+
 					$group 			= isset($row['group']) 		? $row['group'] 	: '';
 					$subgroup 		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
 
@@ -1191,13 +1220,19 @@ NOW;
                 {
                     if(trim($row['english string']) == '')continue;
 
-					$storagepath  		= str_replace('/en.php', '/[iso].php', str_replace('/en/', '/[iso]/', $row['storage file path']));
+					$storagepath  		= str_replace('/en.php', '/[iso].php', $row['storage file path']);
+					
 					$m = array();
 					if(preg_match('/(?:\d+\s*\-\s*)?(.*)$/', $row['section'], $m))
 					{
 						$category       = $m[1];
 						$section		= isset($row['group']) 		? $row['group'] 	: '';
 						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+
+						if($category !== 'Mails2')
+						{
+							$storagepath 		= str_replace('/en/', '/[iso]/', $storagepath); 
+						}
 
 						if($category == 'Modules' && ($exp=Tools::getValue('module_regexp'))!='')
 						{
@@ -1219,18 +1254,6 @@ NOW;
 						$message->addChild('type'		, $type 			);
 						$message->addChild('custom'		, $row['array name']);  
 						$message->addChild('path'		, $storagepath		);
-
-						/*
-						if(defined("ENT_XML1"))
-						{
-							$message->addChild('mkey', htmlentities($row['array key'], ENT_XML1));
-							$message->addChild('text', htmlentities($row['english string'], ENT_XML1));
-						}
-						else
-						{
-							$message->addChild('mkey', htmlentities($row['array key']));
-							$message->addChild('text', htmlentities($row['english string']));
-						}*/
 						
                         $message->addChild('mkey', htmlspecialchars($row['array key']));
 						$message->addChild('text', htmlspecialchars($row['english string']));
