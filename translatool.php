@@ -1084,6 +1084,10 @@ NOW;
 			{
 				$outname = 'template_'._PS_VERSION_.'.xliff';
 			}
+			else if(Tools::getValue('po') == 'yeah')
+			{
+				$outname = 'template_'._PS_VERSION_.'.po';
+			}
 			else
 			{
 				$outname = 'template_'._PS_VERSION_.'.xml';
@@ -1208,6 +1212,57 @@ NOW;
 			}
 
 			$root->asXML($path);
+		}
+		else if(Tools::getValue('po') == 'yeah')
+		{
+			require_once dirname(__FILE__).'/lib/php-po/PoFile.php';
+			$po = new PoFileCore();
+			foreach($methods as $meth)
+			{
+				$arr = $this->$meth();
+				foreach($arr as $row)
+                {
+                    if(trim($row['english string']) == '')continue;
+
+					$storagepath  		= str_replace('/en.php', '/[iso].php', $row['storage file path']);
+					
+					$m = array();
+					if(preg_match('/(?:\d+\s*\-\s*)?(.*)$/', $row['section'], $m))
+					{
+						$category       = $m[1];
+						$section		= isset($row['group']) 		? $row['group'] 	: '';
+						$subsection		= isset($row['subgroup']) 	? $row['subgroup'] 	: '';
+
+						if($category !== 'Mails2')
+						{
+							$storagepath 		= str_replace('/en/', '/[iso]/', $storagepath); 
+						}
+
+						if($category == 'Modules' && ($exp=Tools::getValue('module_regexp'))!='')
+						{
+							if(!preg_match($exp, $section))
+							{
+								continue;
+							}
+						}
+
+						$method 		= ($row['array name'] != '' && $row['array name'] != null) ? 'ARRAY' : 'FILE';
+						$type  			= $method == 'ARRAY' ? 'STRING' : (preg_match("/\.html$/", $storagepath) ? 'HTML' : 'TXT');
+
+						$ctxt = array();
+						if($category !== '')$ctxt[] = $category;
+						if($section !== '')$ctxt[] = $section;
+						if($subsection !== '')$ctxt[] = $subsection;
+
+						$entry = &$po->addMessage(str_replace("\'", "'", $row['english string']), '');
+						$entry['msgctxt'] 	= "\"".implode(' > ', $ctxt)."\"";
+						$entry['comments']	= array(
+							'#:' => array("$storagepath:{$row['array key']}")
+						);
+					}
+				}
+			}
+			$po->write($path);
 		}
 		else
 		{
