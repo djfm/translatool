@@ -72,7 +72,7 @@ class Translatool extends Module
 		$tc = new AdminTranslationsController();
 		
 		
-		$_GET['theme'] = 'default';
+		$_GET['theme'] = _THEME_NAME_;
 		
 		$tc->setTypeSelected($type);
 		$tc->getInformations();
@@ -407,7 +407,7 @@ class Translatool extends Module
 					continue;
 				}
 
-				if($theme_name == 'default')$theme_name = 'prestashop';
+				if($theme_name == 'default' || $theme_name == 'default-bootstrap')$theme_name = 'prestashop';
 
 
 				if(Tools::getValue('compatibility') == '15')
