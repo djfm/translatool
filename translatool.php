@@ -1257,7 +1257,7 @@ NOW;
 						$entry = &$po->addMessage(str_replace("\'", "'", $row['english string']), '');
 						$entry['msgctxt'] 	= "\"".implode(' > ', $ctxt)."\"";
 						$entry['comments']	= array(
-							'#:' => array("$storagepath@{$row['array key']}")
+							'#:' => array("{$row['array key']}@$storagepath")
 						);
 					}
 				}
